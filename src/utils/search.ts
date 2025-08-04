@@ -97,8 +97,8 @@ export function searchBuildings(
       }))
       .sort((a, b) => (a.distance || 0) - (b.distance || 0));
   } else {
-    // Sort by completion year for text search
-    results.sort((a, b) => a.completionYears - b.completionYears);
+    // Sort by building_id in descending order
+    results.sort((a, b) => b.id - a.id);
   }
 
   return results;

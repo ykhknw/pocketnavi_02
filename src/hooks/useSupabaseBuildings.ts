@@ -12,6 +12,13 @@ interface UseBuildingsResult {
   refetch: () => void;
 }
 
+interface UseBuildingByIdResult {
+  building: Building | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 export function useSupabaseBuildings(
   filters: SearchFilters,
   page: number = 1,
@@ -36,7 +43,13 @@ export function useSupabaseBuildings(
       return;
     }
 
-    console.log('Fetching from Supabase...', { filters, page, limit });
+    console.log('Supabase環境変数:', {
+      url: import.meta.env.VITE_SUPABASE_URL,
+      hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+      useApi
+    });
+
+    console.log('Fetching from Supabase...', { filters, page, limit, useApi });
     setLoading(true);
     setError(null);
 
@@ -45,8 +58,8 @@ export function useSupabaseBuildings(
       
       if (filters.query || filters.buildingTypes.length > 0 || filters.prefectures.length > 0) {
         // 検索API使用
-        console.log('Using search API');
-        result = await supabaseApiClient.searchBuildings(filters);
+        console.log('Using search API with pagination:', { page, limit });
+        result = await supabaseApiClient.searchBuildings(filters, page, limit);
       } else {
         // 一覧取得API使用
         console.log('Using getBuildings API');
@@ -88,5 +101,65 @@ export function useSupabaseBuildings(
     error,
     total,
     refetch: fetchBuildings,
+  };
+}
+
+// BuildingDetailPage用の特定の建築物IDを取得するフック
+export function useBuildingById(
+  buildingId: number | null,
+  useApi: boolean = false
+): UseBuildingByIdResult {
+  const [building, setBuilding] = useState<Building | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchBuilding = async () => {
+    if (!buildingId) {
+      setBuilding(null);
+      return;
+    }
+
+    if (!useApi) {
+      // モックデータを使用
+      const foundBuilding = mockBuildings.find(b => b.id === buildingId);
+      setBuilding(foundBuilding || null);
+      return;
+    }
+
+    console.log('Fetching building by ID:', buildingId);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await supabaseApiClient.getBuildingById(buildingId);
+      setBuilding(result);
+      console.log('Building found:', result);
+    } catch (err) {
+      if (err instanceof SupabaseApiError) {
+        setError(`Supabase API Error: ${err.message}`);
+        console.error('Supabase API Error:', err);
+        
+        // フォールバック: モックデータを使用
+        const foundBuilding = mockBuildings.find(b => b.id === buildingId);
+        setBuilding(foundBuilding || null);
+        console.log('Fallback to mock data due to error');
+      } else {
+        setError('Unknown error occurred');
+        console.error('Unknown error:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBuilding();
+  }, [buildingId, useApi]);
+
+  return {
+    building,
+    loading,
+    error,
+    refetch: fetchBuilding,
   };
 }

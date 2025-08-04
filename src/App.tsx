@@ -5,7 +5,7 @@ import { Building, SearchFilters, User, LikedBuilding, SearchHistory } from './t
 import { searchBuildings } from './utils/search';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useLanguage } from './hooks/useLanguage';
-import { useSupabaseBuildings } from './hooks/useSupabaseBuildings';
+import { useSupabaseBuildings, useBuildingById } from './hooks/useSupabaseBuildings';
 import { useSupabaseToggle } from './hooks/useSupabaseToggle';
 import { Header } from './components/Header';
 import { SearchForm } from './components/SearchForm';
@@ -17,6 +17,45 @@ import { AdminPanel } from './components/AdminPanel';
 import { LikedBuildings } from './components/LikedBuildings';
 import { SearchHistoryComponent } from './components/SearchHistory';
 import { DataMigration } from './components/DataMigration';
+
+// URLからフィルターとページ情報を解析する関数
+function parseFiltersFromURL(searchParams: URLSearchParams): { filters: SearchFilters; currentPage: number } {
+  const filters: SearchFilters = {
+    query: searchParams.get('q') || '',
+    radius: parseInt(searchParams.get('radius') || '5', 10),
+    architects: searchParams.get('architects')?.split(',').filter(Boolean) || [],
+    buildingTypes: searchParams.get('buildingTypes')?.split(',').filter(Boolean) || [],
+    prefectures: searchParams.get('prefectures')?.split(',').filter(Boolean) || [],
+    areas: searchParams.get('areas')?.split(',').filter(Boolean) || [],
+    hasPhotos: searchParams.get('hasPhotos') === 'true',
+    hasVideos: searchParams.get('hasVideos') === 'true',
+    currentLocation: null
+  };
+
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
+  return { filters, currentPage };
+}
+
+// フィルターとページ情報をURLに反映する関数
+function updateURLWithFilters(navigate: any, filters: SearchFilters, currentPage: number) {
+  const searchParams = new URLSearchParams();
+  
+  if (filters.query) searchParams.set('q', filters.query);
+  if (filters.radius !== 5) searchParams.set('radius', filters.radius.toString());
+  if (filters.architects && filters.architects.length > 0) searchParams.set('architects', filters.architects.join(','));
+  if (filters.buildingTypes && filters.buildingTypes.length > 0) searchParams.set('buildingTypes', filters.buildingTypes.join(','));
+  if (filters.prefectures && filters.prefectures.length > 0) searchParams.set('prefectures', filters.prefectures.join(','));
+  if (filters.areas && filters.areas.length > 0) searchParams.set('areas', filters.areas.join(','));
+  if (filters.hasPhotos) searchParams.set('hasPhotos', 'true');
+  if (filters.hasVideos) searchParams.set('hasVideos', 'true');
+  if (currentPage > 1) searchParams.set('page', currentPage.toString());
+
+  const searchString = searchParams.toString();
+  const newPath = searchString ? `/?${searchString}` : '/';
+  
+  navigate(newPath, { replace: true });
+}
 
 // 建築物のslugを生成する関数
 function generateSlug(building: Building): string {
@@ -58,19 +97,14 @@ function HomePage() {
     { query: '駅舎', searchedAt: '', count: 16 }
   ]);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: '',
-    radius: 5,
-    architects: [],
-    buildingTypes: [],
-    prefectures: [],
-    areas: [],
-    hasPhotos: false,
-    hasVideos: false,
-    currentLocation: null
-  });
+  
+  // URLから初期状態を読み込む
+  const searchParams = new URLSearchParams(location.search);
+  const { filters: initialFilters, currentPage: initialPage } = parseFiltersFromURL(searchParams);
+  
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [filters, setFilters] = useState<SearchFilters>(initialFilters);
 
   const { location: geoLocation, error: locationError, loading: locationLoading, getCurrentLocation } = useGeolocation();
   const { language, toggleLanguage } = useLanguage();
@@ -88,11 +122,32 @@ function HomePage() {
   // 検索結果のフィルタリング（モックデータ使用時）
   const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
 
+  // URLが変更されたときに状態を更新
+  useEffect(() => {
+    isUpdatingFromURL.current = true;
+    const { filters: urlFilters, currentPage: urlPage } = parseFiltersFromURL(searchParams);
+    setFilters(urlFilters);
+    setCurrentPage(urlPage);
+  }, [location.search]);
+
+  // フィルターまたはページが変更されたときにURLを更新（ただし、URLからの変更でない場合のみ）
+  const isUpdatingFromURL = React.useRef(false);
+  useEffect(() => {
+    if (isUpdatingFromURL.current) {
+      isUpdatingFromURL.current = false;
+      return;
+    }
+    updateURLWithFilters(navigate, filters, currentPage);
+  }, [filters, currentPage, navigate]);
+
   useEffect(() => {
     if (geoLocation) {
       setFilters(prev => ({ ...prev, currentLocation: geoLocation }));
     }
   }, [geoLocation]);
+
+  // フィルターの変更を追跡するためのref
+  const prevFiltersRef = React.useRef<SearchFilters>(filters);
 
   useEffect(() => {
     if (useApi) {
@@ -103,7 +158,20 @@ function HomePage() {
       const results = searchBuildings(buildings, filters);
       setFilteredBuildings(results);
     }
-    setCurrentPage(1); // Reset to first page when filters change
+
+    // フィルターが実際に変更された場合のみページをリセット
+    const filtersChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters);
+    console.log('フィルター変更チェック:', {
+      filtersChanged,
+      currentPage,
+      prevFilters: prevFiltersRef.current,
+      currentFilters: filters
+    });
+    if (filtersChanged) {
+      console.log('フィルターが変更されたため、ページをリセット');
+      setCurrentPage(1);
+      prevFiltersRef.current = filters;
+    }
     
     // Add to search history if there's a query
     if (filters.query.trim()) {
@@ -127,7 +195,7 @@ function HomePage() {
 
   const handleBuildingSelect = (building: Building) => {
     const slug = generateSlug(building);
-    navigate(`/building/${slug}`, { state: { building } });
+    navigate(`/building/${slug}`);
   };
 
   const handleLike = (buildingId: number) => {
@@ -281,10 +349,22 @@ function HomePage() {
   const totalPages = Math.ceil((useApi ? totalBuildings : filteredBuildings.length) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentBuildings = useApi 
-    ? filteredBuildings // API使用時は既にページング済み
+    ? buildings // API使用時はbuildings（既にページング済み）
     : filteredBuildings.slice(startIndex, startIndex + itemsPerPage);
 
+  // ページネーション表示条件のデバッグ
+  console.log('ページネーション情報:', {
+    filteredBuildingsLength: filteredBuildings.length,
+    totalPages,
+    currentPage,
+    showPagination: filteredBuildings.length >= 10 && totalPages > 1,
+    currentBuildingsLength: currentBuildings.length,
+    useApi,
+    totalBuildings
+  });
+
   const handlePageChange = (page: number) => {
+    console.log(`ページ変更開始: ${page}/${totalPages}, 現在のページ: ${currentPage}`);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -327,11 +407,9 @@ function HomePage() {
         <SearchForm
           filters={filters}
           onFiltersChange={setFilters}
-          buildings={buildings}
-          location={geoLocation}
-          locationError={locationError}
+          onGetLocation={getCurrentLocation}
           locationLoading={locationLoading}
-          onGetCurrentLocation={getCurrentLocation}
+          locationError={locationError}
           language={language}
         />
 
@@ -350,7 +428,7 @@ function HomePage() {
               <h2 className="text-2xl font-bold text-foreground flex-shrink-0" style={{ fontSize: '1.5rem' }}>
                 {language === 'ja' ? '建築物一覧' : 'Buildings'} ({filteredBuildings.length}{language === 'ja' ? '件' : ' items'})
               </h2>
-              {totalPages > 1 && (
+              {filteredBuildings.length >= 10 && totalPages > 1 && (
                 <span className="text-sm text-muted-foreground">
                   {language === 'ja' ? `${currentPage}/${totalPages}ページ` : `Page ${currentPage}/${totalPages}`}
                 </span>
@@ -381,7 +459,7 @@ function HomePage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {filteredBuildings.length >= 10 && totalPages > 1 && (
                   <div className="flex justify-center items-center space-x-2 mt-8 w-full">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
@@ -443,7 +521,7 @@ function HomePage() {
           </div>
         </div>
         {/* Centered Pagination for all screen sizes */}
-        {totalPages > 1 && (
+        {filteredBuildings.length >= 10 && totalPages > 1 && (
           <div className="flex justify-center items-center space-x-2 mt-12 w-full">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -536,30 +614,19 @@ function BuildingDetailPage() {
   const { language } = useLanguage();
   const { useApi } = useSupabaseToggle();
   
-  // 固定フィルターをuseMemoで最適化
-  const detailPageFilters = React.useMemo(() => ({
-    query: '',
-    radius: 5,
-    architects: [],
-    buildingTypes: [],
-    prefectures: [],
-    areas: [],
-    hasPhotos: false,
-    hasVideos: false,
-    currentLocation: null
-  }), []);
+  // slugから建築物IDを抽出
+  const buildingId = slug ? extractIdFromSlug(slug) : null;
   
-  const { buildings } = useSupabaseBuildings(detailPageFilters, 1, 1000, useApi);
+  // 特定の建築物IDを取得
+  const { building, loading, error } = useBuildingById(buildingId, useApi);
 
-  // URLのstateから建築物データを取得、なければslugから検索
-  const building = location.state?.building || 
-    (slug ? buildings.find(b => b.id === extractIdFromSlug(slug)) : null);
+  // URLのstateから建築物データを取得（優先）
+  const buildingFromState = location.state?.building;
+  const finalBuilding = buildingFromState || building;
 
   const handleClose = () => {
-    console.log('🔍 BuildingDetailPage handleClose called');
-    console.log('🔍 About to navigate to /');
-    navigate('/');
-    console.log('🔍 Navigate called');
+    // ブラウザの履歴を使用して前のページに戻る
+    navigate(-1);
   };
 
   const handleLike = (buildingId: number) => {
@@ -576,7 +643,34 @@ function BuildingDetailPage() {
     navigate(`/?lat=${lat}&lng=${lng}&radius=2`);
   };
 
-  if (!building) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">読み込み中...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">エラーが発生しました</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            ホームに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!finalBuilding) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -593,7 +687,7 @@ function BuildingDetailPage() {
   }
 
   // 表示インデックスを計算（簡易版）
-  const displayIndex = buildings.findIndex(b => b.id === building.id) + 1;
+  const displayIndex = 1; // 詳細ページでは常に1として表示
 
   return (
     <div className="min-h-screen bg-background">
@@ -608,7 +702,7 @@ function BuildingDetailPage() {
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BuildingDetail
-          building={building}
+          building={finalBuilding}
           onClose={handleClose}
           onLike={handleLike}
           onPhotoLike={handlePhotoLike}

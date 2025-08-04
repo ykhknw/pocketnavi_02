@@ -37,7 +37,8 @@ export function useOptimizedBuildings(
             architects(id, name_ja, name_en)
           )
         `)
-        .range(pageParam, pageParam + pageSize - 1);
+        .range(pageParam, pageParam + pageSize - 1)
+        .order('id', { ascending: false });
 
       // フィルター適用
       if (filters.query) {
@@ -81,7 +82,8 @@ export function useBuildingsList(filters: SearchFilters) {
       let query = supabase
         .from('buildings')
         .select('id, title, title_en, lat, lng, likes, prefectures')
-        .limit(100);
+        .limit(100)
+        .order('id', { ascending: false });
 
       if (filters.query) {
         query = query.or(`title.ilike.%${filters.query}%,title_en.ilike.%${filters.query}%`);

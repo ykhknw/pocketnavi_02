@@ -28,7 +28,7 @@ class SupabaseApiClient {
       .not('lat', 'is', null)
       .not('lng', 'is', null)
       .range(start, end)
-      .order('building_id', { ascending: true });
+      .order('building_id', { ascending: false });
 
     console.log('Supabase response:', { buildings: buildings?.length, error, count });
 
@@ -77,7 +77,7 @@ class SupabaseApiClient {
     return await this.transformBuilding(building);
   }
 
-  async searchBuildings(filters: SearchFilters): Promise<{ buildings: Building[], total: number }> {
+  async searchBuildings(filters: SearchFilters, page: number = 1, limit: number = 10): Promise<{ buildings: Building[], total: number }> {
     let query = supabase
       .from('buildings_table_2')
       .select(`
@@ -116,8 +116,12 @@ class SupabaseApiClient {
                .lte('lng', lng + radius * 0.011);
     }
 
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
     const { data: buildings, error, count } = await query
-      .order('completionYears', { ascending: true });
+      .order('building_id', { ascending: false })
+      .range(start, end);
 
     if (error) {
       throw new SupabaseApiError(500, error.message);
