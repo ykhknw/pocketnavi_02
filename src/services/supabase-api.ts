@@ -1,3 +1,4 @@
+import { PhotoChecker } from '../utils/photo-checker';
 import { supabase } from '../lib/supabase'
 import { Building, SearchFilters, Architect, Photo } from '../types'
 
@@ -22,8 +23,7 @@ class SupabaseApiClient {
         *,
         building_architects(
           architects_table!inner(*)
-        ),
-        photos(*)
+        )
       `)
       .range(start, end)
       .order('building_id', { ascending: true });
@@ -36,7 +36,9 @@ class SupabaseApiClient {
     }
 
     // データ変換
-    const transformedBuildings = buildings?.map(this.transformBuilding) || [];
+    const transformedBuildings = await Promise.all(
+      buildings?.map(building => this.transformBuilding(building)) || []
+    );
     console.log('Transformed buildings:', transformedBuildings.length);
 
     return {
@@ -52,8 +54,7 @@ class SupabaseApiClient {
         *,
         building_architects!inner(
           architects_table(*)
-        ),
-        photos(*)
+        )
       `)
       .eq('building_id', id)
       .single();
@@ -62,7 +63,7 @@ class SupabaseApiClient {
       throw new SupabaseApiError(404, error.message);
     }
 
-    return this.transformBuilding(building);
+    return await this.transformBuilding(building);
   }
 
   async searchBuildings(filters: SearchFilters): Promise<{ buildings: Building[], total: number }> {
@@ -72,8 +73,7 @@ class SupabaseApiClient {
         *,
         building_architects!inner(
           architects_table(*)
-        ),
-        photos(*)
+        )
       `, { count: 'exact' });
 
     // テキスト検索
@@ -115,7 +115,9 @@ class SupabaseApiClient {
       throw new SupabaseApiError(500, error.message);
     }
 
-    const transformedBuildings = buildings?.map(this.transformBuilding) || [];
+    const transformedBuildings = await Promise.all(
+      buildings?.map(building => this.transformBuilding(building)) || []
+    );
 
     return {
       buildings: transformedBuildings,
@@ -277,7 +279,7 @@ class SupabaseApiClient {
   }
 
   // データ変換ヘルパー
-  private transformBuilding(data: any): Building {
+  private async transformBuilding(data: any): Promise<Building> {
     console.log('Transforming building data:', data);
     
     // buildingTypesなどのカンマ区切り文字列を配列に変換
@@ -300,6 +302,26 @@ class SupabaseApiClient {
       architectEn: ba.architects_table?.architectEn || ba.architects_table?.architectJa || '',
       websites: []
     })) || [];
+
+    // 外部写真URLの生成
+    const generatePhotosFromUid = async (uid: string): Promise<Photo[]> => {
+      if (!uid) return [];
+      
+      // 実際に存在する写真のみを取得
+      const existingPhotos = await PhotoChecker.getExistingPhotos(uid);
+      
+      return existingPhotos.map((photo, index) => ({
+        id: index + 1,
+        building_id: data.building_id,
+        url: photo.url,
+        thumbnail_url: photo.url,
+        likes: 0,
+        created_at: new Date().toISOString()
+      }));
+    };
+
+    // 写真データを非同期で取得
+    const photos = await generatePhotosFromUid(data.uid);
     return {
       id: data.building_id,
       uid: data.uid,
@@ -319,7 +341,7 @@ class SupabaseApiClient {
       lat: parseFloat(data.lat) || 0,
       lng: parseFloat(data.lng) || 0,
       architects: architects,
-      photos: [], // photosテーブルがない場合は空配列
+      photos: photos, // 実際に存在する写真のみ
       likes: 0, // likesカラムがない場合は0
       created_at: data.created_at || new Date().toISOString(),
       updated_at: data.updated_at || new Date().toISOString()
