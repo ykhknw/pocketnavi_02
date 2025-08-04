@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Heart, MapPin, Calendar, Camera, Video, ExternalLink, Globe, Play } from 'lucide-react';
 import { Building } from '../types';
 import { formatDistance } from '../utils/distance';
@@ -28,6 +28,20 @@ export function BuildingDetail({
   const hasRealPhotos = building.photos.length > 0;
   const isRealThumbnail = !building.thumbnailUrl.includes('pexels.com');
   const isRealBuilding = hasRealPhotos || isRealThumbnail;
+
+  // ESCキーでモーダルを閉じる
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, []);
 
   const handleExternalImageSearch = (query: string, engine: 'google' | 'bing' = 'google') => {
     const encodedQuery = encodeURIComponent(query);
@@ -95,14 +109,14 @@ export function BuildingDetail({
             </button>
             <button
               onClick={handleClose}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-3 rounded-full transition-colors ${
                 isRealBuilding 
                   ? 'hover:bg-amber-100 text-amber-700' 
                   : 'hover:bg-gray-100'
               }`}
               style={{ zIndex: 10000 }}
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </button>
           </div>
         </div>
@@ -115,7 +129,7 @@ export function BuildingDetail({
               <div className="flex flex-wrap gap-1">
                 <div className="flex items-center gap-1 border-amber-300 text-amber-800 bg-amber-50 text-sm px-3 py-1 rounded-full border">
                   <MapPin className="h-3 w-3" />
-                  {building.location}
+                  {language === 'ja' ? building.location : (building.locationEn || building.location)}
                 </div>
                 {building.distance && (
                   <div className="border-green-300 text-green-800 bg-green-50 text-sm px-3 py-1 rounded-full border">
@@ -138,9 +152,9 @@ export function BuildingDetail({
 
               {/* Building Type Badges */}
               <div className="flex flex-wrap gap-1">
-                {building.buildingTypes.slice(0, 3).map(type => (
+                {(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 3).map((type, index) => (
                   <div
-                    key={type}
+                    key={`${type}-${index}`}
                     className="border-amber-200 text-amber-700 text-sm px-3 py-1 rounded-full bg-secondary"
                   >
                     {type}

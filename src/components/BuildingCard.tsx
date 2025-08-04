@@ -74,7 +74,7 @@ export function BuildingCard({
               className="border-amber-300 text-amber-800 bg-amber-50 text-sm"
             >
               <MapPin className="h-3 w-3 mr-1" />
-              {building.location}
+              {language === 'ja' ? building.location : (building.locationEn || building.location)}
             </Badge>
             {building.distance && (
               <Badge
@@ -101,9 +101,9 @@ export function BuildingCard({
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {building.buildingTypes.slice(0, 3).map(type => (
+            {(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 3).map((type, index) => (
               <Badge
-                key={type}
+                key={`${type}-${index}`}
                 variant="secondary"
                 className="border-amber-200 text-amber-700 text-sm"
               >

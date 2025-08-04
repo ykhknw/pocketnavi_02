@@ -10,7 +10,7 @@ interface MapProps {
   startIndex?: number;
 }
 
-export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLocation, language, startIndex = 0 }: MapProps) {
+export default function Map({ buildings, selectedBuilding, onBuildingSelect, currentLocation, language, startIndex }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -113,7 +113,7 @@ export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLoca
 
         try {
           const customIcon = L.divIcon({
-            html: `<div style="background-color: #2563eb; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${startIndex + index + 1}</div>`,
+            html: `<div style="background-color: #2563eb; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${(startIndex || 0) + index + 1}</div>`,
             className: 'custom-marker',
             iconSize: [32, 32],
             iconAnchor: [16, 16]
@@ -127,10 +127,10 @@ export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLoca
             <div style="padding: 8px; min-width: 200px;">
               <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">${language === 'ja' ? building.title : building.titleEn}</h3>
               <p style="font-size: 12px; color: #666; margin-bottom: 8px;">${building.architects.map(a => language === 'ja' ? a.architectJa : a.architectEn).join(', ')}</p>
-              <p style="font-size: 10px; color: #999; margin-bottom: 8px;">${building.location}</p>
+              <p style="font-size: 10px; color: #999; margin-bottom: 8px;">${language === 'ja' ? building.location : (building.locationEn || building.location)}</p>
               <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                 <span style="background-color: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${building.completionYears}${language === 'ja' ? '年' : ''}</span>
-                ${building.buildingTypes.slice(0, 2).map(type => 
+                ${(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 2).map(type => 
                   `<span style="background-color: #f3f4f6; color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${type}</span>`
                 ).join('')}
               </div>
@@ -253,7 +253,7 @@ export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLoca
     } catch (error) {
       console.error('Error updating map markers:', error);
     }
-  }, [buildings, currentLocation, isMapReady, onBuildingSelect, language]);
+  }, [buildings, currentLocation, isMapReady, onBuildingSelect, language, startIndex]);
 
   const loadLeaflet = () => {
     return new Promise((resolve) => {

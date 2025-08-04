@@ -32,9 +32,11 @@ export function useSupabaseBuildings(
       
       setBuildings(paginatedResults);
       setTotal(filtered.length);
+      console.log('Using mock data:', paginatedResults.length, 'buildings');
       return;
     }
 
+    console.log('Fetching from Supabase...', { filters, page, limit });
     setLoading(true);
     setError(null);
 
@@ -43,12 +45,15 @@ export function useSupabaseBuildings(
       
       if (filters.query || filters.buildingTypes.length > 0 || filters.prefectures.length > 0) {
         // 検索API使用
+        console.log('Using search API');
         result = await supabaseApiClient.searchBuildings(filters);
       } else {
         // 一覧取得API使用
+        console.log('Using getBuildings API');
         result = await supabaseApiClient.getBuildings(page, limit);
       }
 
+      console.log('Supabase result:', result);
       setBuildings(result.buildings);
       setTotal(result.total);
     } catch (err) {
@@ -63,6 +68,7 @@ export function useSupabaseBuildings(
         
         setBuildings(paginatedResults);
         setTotal(filtered.length);
+        console.log('Fallback to mock data due to error');
       } else {
         setError('Unknown error occurred');
         console.error('Unknown error:', err);

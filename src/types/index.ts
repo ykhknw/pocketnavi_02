@@ -13,6 +13,8 @@ export interface Building {
   prefectures: string;
   areas: string;
   location: string;
+  locationEn?: string;
+  buildingTypesEn?: string[];
   architectDetails: string;
   lat: number;
   lng: number;

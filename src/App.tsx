@@ -11,7 +11,7 @@ import { Header } from './components/Header';
 import { SearchForm } from './components/SearchForm';
 import { BuildingCard } from './components/BuildingCard';
 import { BuildingDetail } from './components/BuildingDetail';
-import { Map } from './components/Map';
+import Map from './components/Map';
 import { LoginModal } from './components/LoginModal';
 import { AdminPanel } from './components/AdminPanel';
 import { LikedBuildings } from './components/LikedBuildings';
@@ -123,7 +123,7 @@ function HomePage() {
         ]);
       }
     }
-  }, [buildings, filters, searchHistory]);
+  }, [useApi, buildings, filters, searchHistory]);
 
   const handleBuildingSelect = (building: Building) => {
     const slug = generateSlug(building);
@@ -303,11 +303,11 @@ function HomePage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* API状態表示（開発用） */}
-        {true && (
+        {import.meta.env.DEV && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-blue-700 text-sm">
-                Supabase Status: {apiStatus} | Using: {useApi ? 'Supabase API' : 'Mock Data'}
+                データソース: {useApi ? 'Supabase API' : 'モックデータ'} | 状態: {apiStatus}
                 {isSupabaseConnected && ' ✅'}
               </span>
               <Button
