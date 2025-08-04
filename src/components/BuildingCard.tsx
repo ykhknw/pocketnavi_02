@@ -101,9 +101,9 @@ export function BuildingCard({
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {building.buildingTypes.slice(0, 3).map(type => (
+            {(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 3).map((type, index) => (
               <Badge
-                key={type}
+                key={`${type}-${index}`}
                 variant="secondary"
                 className="border-amber-200 text-amber-700 text-sm"
               >
@@ -114,9 +114,9 @@ export function BuildingCard({
 
           <div className="flex flex-wrap gap-1 mb-2">
             <Badge
-          {(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 3).map((type, index) => (
+              variant="outline"
               className="border-amber-300 text-amber-800 bg-amber-50 text-sm"
-              key={`${type}-${index}`}
+            >
               <Calendar className="h-3 w-3 mr-1" />
               {building.completionYears}{t('year', language)}
             </Badge>
