@@ -10,7 +10,6 @@ interface MapProps {
   startIndex?: number;
 }
 
-export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLocation, language, startIndex = 0 }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);

@@ -59,7 +59,7 @@ function HomePage() {
   ]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     radius: 5,
@@ -123,7 +123,7 @@ function HomePage() {
         ]);
       }
     }
-  }, [buildings, filters, searchHistory]);
+  }, [buildings, filters]);
 
   const handleBuildingSelect = (building: Building) => {
     const slug = generateSlug(building);
