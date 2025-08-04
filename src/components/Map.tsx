@@ -10,7 +10,7 @@ interface MapProps {
   startIndex?: number;
 }
 
-export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLocation, language, startIndex = 0 }: MapProps) {
+export default function Map({ buildings, selectedBuilding, onBuildingSelect, currentLocation, language, startIndex }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -253,7 +253,7 @@ export function Map({ buildings, selectedBuilding, onBuildingSelect, currentLoca
     } catch (error) {
       console.error('Error updating map markers:', error);
     }
-  }, [buildings, currentLocation, isMapReady, onBuildingSelect, language]);
+  }, [buildings, currentLocation, isMapReady, onBuildingSelect, language, startIndex]);
 
   const loadLeaflet = () => {
     return new Promise((resolve) => {
