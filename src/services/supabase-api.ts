@@ -11,6 +11,8 @@ export class SupabaseApiError extends Error {
 class SupabaseApiClient {
   // 建築物関連API
   async getBuildings(page: number = 1, limit: number = 10): Promise<{ buildings: Building[], total: number }> {
+    console.log('Supabase getBuildings called:', { page, limit });
+    
     const start = (page - 1) * limit;
     const end = start + limit - 1;
 
@@ -18,20 +20,24 @@ class SupabaseApiClient {
       .from('buildings_table_2')
       .select(`
         *,
-        building_architects!inner(
-          architects_table(*)
+        building_architects(
+          architects_table!inner(*)
         ),
         photos(*)
       `)
       .range(start, end)
-      .order('completionYears', { ascending: true });
+      .order('building_id', { ascending: true });
+
+    console.log('Supabase response:', { buildings: buildings?.length, error, count });
 
     if (error) {
+      console.error('Supabase error:', error);
       throw new SupabaseApiError(500, error.message);
     }
 
     // データ変換
     const transformedBuildings = buildings?.map(this.transformBuilding) || [];
+    console.log('Transformed buildings:', transformedBuildings.length);
 
     return {
       buildings: transformedBuildings,
@@ -272,6 +278,8 @@ class SupabaseApiClient {
 
   // データ変換ヘルパー
   private transformBuilding(data: any): Building {
+    console.log('Transforming building data:', data);
+    
     // buildingTypesなどのカンマ区切り文字列を配列に変換
     const parseCommaSeparated = (str: string | null): string[] => {
       if (!str) return [];
@@ -285,6 +293,13 @@ class SupabaseApiClient {
       return isNaN(parsed) ? new Date().getFullYear() : parsed;
     };
 
+    // 建築家データの変換
+    const architects = data.building_architects?.map((ba: any) => ({
+      architect_id: ba.architects_table?.architect_id || 0,
+      architectJa: ba.architects_table?.architectJa || '',
+      architectEn: ba.architects_table?.architectEn || ba.architects_table?.architectJa || '',
+      websites: []
+    })) || [];
     return {
       id: data.building_id,
       uid: data.uid,
@@ -303,12 +318,7 @@ class SupabaseApiClient {
       architectDetails: data.architectDetails || '',
       lat: parseFloat(data.lat) || 0,
       lng: parseFloat(data.lng) || 0,
-      architects: data.building_architects?.map((ba: any) => ({
-        architect_id: ba.architects_table.architect_id,
-        architectJa: ba.architects_table.architectJa,
-        architectEn: ba.architects_table.architectEn || ba.architects_table.architectJa,
-        websites: [] // TODO: 必要に応じてarchitect_websites_3から取得
-      })) || [],
+      architects: architects,
       photos: [], // photosテーブルがない場合は空配列
       likes: 0, // likesカラムがない場合は0
       created_at: data.created_at || new Date().toISOString(),

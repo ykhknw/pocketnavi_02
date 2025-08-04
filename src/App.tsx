@@ -303,11 +303,11 @@ function HomePage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* API状態表示（開発用） */}
-        {true && (
+        {import.meta.env.DEV && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-blue-700 text-sm">
-                Supabase Status: {apiStatus} | Using: {useApi ? 'Supabase API' : 'Mock Data'}
+                データソース: {useApi ? 'Supabase API' : 'モックデータ'} | 状態: {apiStatus}
                 {isSupabaseConnected && ' ✅'}
               </span>
               <Button

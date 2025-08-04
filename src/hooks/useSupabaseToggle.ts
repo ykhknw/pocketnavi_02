@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 export function useSupabaseToggle() {
   const [useApi, setUseApi] = useState(() => {
     // 環境変数でAPI使用を制御
-    return import.meta.env.VITE_USE_SUPABASE === 'true';
+    const useSupabase = import.meta.env.VITE_USE_SUPABASE === 'true';
+    console.log('Supabase設定:', { useSupabase, url: import.meta.env.VITE_SUPABASE_URL });
+    return useSupabase;
   });
 
   const [apiStatus, setApiStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
