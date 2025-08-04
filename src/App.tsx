@@ -11,7 +11,7 @@ import { Header } from './components/Header';
 import { SearchForm } from './components/SearchForm';
 import { BuildingCard } from './components/BuildingCard';
 import { BuildingDetail } from './components/BuildingDetail';
-import { Map } from './components/Map';
+import Map from './components/Map';
 import { LoginModal } from './components/LoginModal';
 import { AdminPanel } from './components/AdminPanel';
 import { LikedBuildings } from './components/LikedBuildings';
