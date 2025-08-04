@@ -59,7 +59,7 @@ function HomePage() {
   ]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     radius: 5,

@@ -25,6 +25,8 @@ class SupabaseApiClient {
           architects_table!inner(*)
         )
       `)
+      .not('lat', 'is', null)
+      .not('lng', 'is', null)
       .range(start, end)
       .order('building_id', { ascending: true });
 
@@ -36,9 +38,18 @@ class SupabaseApiClient {
     }
 
     // データ変換
-    const transformedBuildings = await Promise.all(
-      buildings?.map(building => this.transformBuilding(building)) || []
-    );
+    const transformedBuildings: Building[] = [];
+    if (buildings) {
+      for (const building of buildings) {
+        try {
+          const transformed = await this.transformBuilding(building);
+          transformedBuildings.push(transformed);
+        } catch (error) {
+          console.warn('Skipping building due to invalid data:', error);
+          // 無効なデータの建築物はスキップ
+        }
+      }
+    }
     console.log('Transformed buildings:', transformedBuildings.length);
 
     return {
@@ -75,6 +86,8 @@ class SupabaseApiClient {
           architects_table(*)
         )
       `, { count: 'exact' });
+      .not('lat', 'is', null)
+      .not('lng', 'is', null);
 
     // テキスト検索
     if (filters.query.trim()) {
@@ -84,11 +97,6 @@ class SupabaseApiClient {
     // 都道府県フィルター
     if (filters.prefectures.length > 0) {
       query = query.in('prefectures', filters.prefectures);
-    }
-
-    // 写真フィルター
-    if (filters.hasPhotos) {
-      query = query.not('thumbnailUrl', 'is', null);
     }
 
     // 動画フィルター
@@ -115,9 +123,25 @@ class SupabaseApiClient {
       throw new SupabaseApiError(500, error.message);
     }
 
-    const transformedBuildings = await Promise.all(
-      buildings?.map(building => this.transformBuilding(building)) || []
-    );
+    // データ変換と写真フィルター
+    const transformedBuildings: Building[] = [];
+    if (buildings) {
+      for (const building of buildings) {
+        try {
+          const transformed = await this.transformBuilding(building);
+          
+          // 写真フィルター（変換後に適用）
+          if (filters.hasPhotos && transformed.photos.length === 0) {
+            continue; // 写真がない場合はスキップ
+          }
+          
+          transformedBuildings.push(transformed);
+        } catch (error) {
+          console.warn('Skipping building due to invalid data:', error);
+          // 無効なデータの建築物はスキップ
+        }
+      }
+    }
 
     return {
       buildings: transformedBuildings,
@@ -282,10 +306,29 @@ class SupabaseApiClient {
   private async transformBuilding(data: any): Promise<Building> {
     console.log('Transforming building data:', data);
     
+    // 位置データのバリデーション - lat, lngどちらかがNULLの場合はスキップ
+    if (data.lat === null || data.lng === null || 
+        typeof data.lat !== 'number' || typeof data.lng !== 'number' ||
+        isNaN(data.lat) || isNaN(data.lng)) {
+      throw new Error(`Invalid coordinates for building ${data.building_id}: lat=${data.lat}, lng=${data.lng}`);
+    }
+
     // buildingTypesなどのカンマ区切り文字列を配列に変換
     const parseCommaSeparated = (str: string | null): string[] => {
       if (!str) return [];
       return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    };
+
+    // スラッシュ区切り文字列を配列に変換（建物用途用）
+    const parseSlashSeparated = (str: string | null): string[] => {
+      if (!str) return [];
+      return str.split('/').map(s => s.trim()).filter(s => s.length > 0);
+    };
+
+    // 全角スペース区切り文字列を配列に変換（建築家用）
+    const parseFullWidthSpaceSeparated = (str: string | null): string[] => {
+      if (!str) return [];
+      return str.split('　').map(s => s.trim()).filter(s => s.length > 0);
     };
 
     // completionYearsを数値に変換
@@ -295,13 +338,26 @@ class SupabaseApiClient {
       return isNaN(parsed) ? new Date().getFullYear() : parsed;
     };
 
-    // 建築家データの変換
-    const architects = data.building_architects?.map((ba: any) => ({
-      architect_id: ba.architects_table?.architect_id || 0,
-      architectJa: ba.architects_table?.architectJa || '',
-      architectEn: ba.architects_table?.architectEn || ba.architects_table?.architectJa || '',
-      websites: []
-    })) || [];
+    // 建築家データの変換（全角スペース区切りに対応）
+    let architects: any[] = [];
+    if (data.building_architects && data.building_architects.length > 0) {
+      // データベースから取得した建築家データ
+      architects = data.building_architects.map((ba: any) => ({
+        architect_id: ba.architects_table?.architect_id || 0,
+        architectJa: ba.architects_table?.architectJa || '',
+        architectEn: ba.architects_table?.architectEn || ba.architects_table?.architectJa || '',
+        websites: []
+      }));
+    } else if (data.architectDetails) {
+      // architectDetailsフィールドから建築家名を抽出（全角スペース区切り）
+      const architectNames = parseFullWidthSpaceSeparated(data.architectDetails);
+      architects = architectNames.map((name, index) => ({
+        architect_id: index + 1,
+        architectJa: name,
+        architectEn: name,
+        websites: []
+      }));
+    }
 
     // 外部写真URLの生成
     const generatePhotosFromUid = async (uid: string): Promise<Photo[]> => {
@@ -322,6 +378,7 @@ class SupabaseApiClient {
 
     // 写真データを非同期で取得
     const photos = await generatePhotosFromUid(data.uid);
+    
     return {
       id: data.building_id,
       uid: data.uid,
@@ -331,12 +388,14 @@ class SupabaseApiClient {
       youtubeUrl: data.youtubeUrl || '',
       completionYears: parseYear(data.completionYears),
       parentBuildingTypes: parseCommaSeparated(data.parentBuildingTypes),
-      buildingTypes: parseCommaSeparated(data.buildingTypes),
+      buildingTypes: parseSlashSeparated(data.buildingTypes),
       parentStructures: parseCommaSeparated(data.parentStructures),
       structures: parseCommaSeparated(data.structures),
       prefectures: data.prefectures,
       areas: data.areas,
       location: data.location,
+      locationEn: data.locationEn_from_datasheetChunkEn || data.location,
+      buildingTypesEn: parseSlashSeparated(data.buildingTypesEn),
       architectDetails: data.architectDetails || '',
       lat: parseFloat(data.lat) || 0,
       lng: parseFloat(data.lng) || 0,

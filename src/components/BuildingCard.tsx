@@ -74,7 +74,7 @@ export function BuildingCard({
               className="border-amber-300 text-amber-800 bg-amber-50 text-sm"
             >
               <MapPin className="h-3 w-3 mr-1" />
-              {building.location}
+              {language === 'ja' ? building.location : (building.locationEn || building.location)}
             </Badge>
             {building.distance && (
               <Badge
@@ -114,9 +114,9 @@ export function BuildingCard({
 
           <div className="flex flex-wrap gap-1 mb-2">
             <Badge
-              variant="outline"
+          {(language === 'ja' ? building.buildingTypes : (building.buildingTypesEn || building.buildingTypes)).slice(0, 3).map((type, index) => (
               className="border-amber-300 text-amber-800 bg-amber-50 text-sm"
-            >
+              key={`${type}-${index}`}
               <Calendar className="h-3 w-3 mr-1" />
               {building.completionYears}{t('year', language)}
             </Badge>
