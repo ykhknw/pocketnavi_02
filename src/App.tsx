@@ -123,7 +123,7 @@ function HomePage() {
         ]);
       }
     }
-  }, [buildings, filters]);
+  }, [useApi, buildings, filters, searchHistory]);
 
   const handleBuildingSelect = (building: Building) => {
     const slug = generateSlug(building);
