@@ -85,7 +85,7 @@ class SupabaseApiClient {
         building_architects!inner(
           architects_table(*)
         )
-      `, { count: 'exact' });
+      `, { count: 'exact' })
       .not('lat', 'is', null)
       .not('lng', 'is', null);
 
