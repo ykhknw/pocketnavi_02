@@ -528,27 +528,31 @@ function HomePage() {
           </div>
 
           <div className="lg:col-span-1 space-y-6 lg:pl-4">
-            <Map
-              buildings={currentBuildings}
-              selectedBuilding={null}
-              onBuildingSelect={handleBuildingSelect}
-              currentLocation={filters.currentLocation}
-              language={language}
-              startIndex={startIndex}
-            />
-            
-            <LikedBuildings
-              likedBuildings={likedBuildings}
-              language={language}
-              onBuildingClick={handleLikedBuildingClick}
-            />
-            
-            <SearchHistoryComponent
-              recentSearches={searchHistory}
-              popularSearches={popularSearches}
-              language={language}
-              onSearchClick={handleSearchFromHistory}
-            />
+            {!selectedBuilding && (
+              <>
+                <Map
+                  buildings={currentBuildings}
+                  selectedBuilding={null}
+                  onBuildingSelect={handleBuildingSelect}
+                  currentLocation={filters.currentLocation}
+                  language={language}
+                  startIndex={startIndex}
+                />
+                
+                <LikedBuildings
+                  likedBuildings={likedBuildings}
+                  language={language}
+                  onBuildingClick={handleLikedBuildingClick}
+                />
+                
+                <SearchHistoryComponent
+                  recentSearches={searchHistory}
+                  popularSearches={popularSearches}
+                  language={language}
+                  onSearchClick={handleSearchFromHistory}
+                />
+              </>
+            )}
           </div>
         </div>
         {/* Centered Pagination for all screen sizes */}

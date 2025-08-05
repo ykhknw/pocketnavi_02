@@ -80,7 +80,7 @@ export function BuildingDetail({
   // インライン表示の場合
   if (isInline) {
     return (
-      <div className={`rounded-lg w-full ${
+      <div className={`rounded-lg w-full mb-6 ${
         isRealBuilding 
           ? 'bg-gradient-to-br from-white to-amber-50 ring-2 ring-amber-300 shadow-2xl' 
           : 'bg-white shadow-xl border'
@@ -107,6 +107,16 @@ export function BuildingDetail({
             >
               <Heart className="h-4 w-4" />
               <span className="font-medium">{building.likes}</span>
+            </button>
+            <button
+              onClick={handleClose}
+              className={`p-3 rounded-full transition-colors ${
+                isRealBuilding 
+                  ? 'hover:bg-amber-100 text-amber-700' 
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              <X className="h-6 w-6" />
             </button>
           </div>
         </div>
@@ -196,7 +206,7 @@ export function BuildingDetail({
             </div>
 
             {/* Map */}
-            <div className="h-64">
+            <div className="h-80">
               <DetailMap
                 building={building} 
                 language={language}
