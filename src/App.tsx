@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from './components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { Building, SearchFilters, User, LikedBuilding, SearchHistory } from './types';
 import { searchBuildings } from './utils/search';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -194,8 +195,8 @@ function HomePage() {
   }, [useApi, buildings, filters, searchHistory]);
 
   const handleBuildingSelect = (building: Building) => {
-    const slug = generateSlug(building);
-    navigate(`/building/${slug}`);
+    setSelectedBuilding(building);
+    setShowDetail(false); // モーダル表示を無効化
   };
 
   const handleLike = (buildingId: number) => {
@@ -414,7 +415,8 @@ function HomePage() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
             {buildingsLoading && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -424,6 +426,34 @@ function HomePage() {
               </div>
             )}
 
+            {selectedBuilding ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 mb-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedBuilding(null)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {language === 'ja' ? '一覧に戻る' : 'Back to List'}
+                  </Button>
+                  <h2 className="text-xl font-bold">
+                    {language === 'ja' ? '建築物詳細' : 'Building Details'}
+                  </h2>
+                </div>
+                <BuildingDetail
+                  building={selectedBuilding}
+                  onClose={() => setSelectedBuilding(null)}
+                  onLike={handleLike}
+                  onPhotoLike={handlePhotoLike}
+                  language={language}
+                  onSearchAround={handleSearchAround}
+                  displayIndex={1}
+                  isInline={true}
+                />
+              </div>
+            ) : (
+              <>
             <div className="flex items-center justify-between w-full">
               <h2 className="text-2xl font-bold text-foreground flex-shrink-0" style={{ fontSize: '1.5rem' }}>
                 {language === 'ja' ? '建築物一覧' : 'Buildings'} ({filteredBuildings.length}{language === 'ja' ? '件' : ' items'})
@@ -493,10 +523,11 @@ function HomePage() {
                   </div>
                 )}
               </>
+              )}
             )}
           </div>
 
-          <div className="space-y-6 lg:pl-4">
+          <div className="lg:col-span-1 space-y-6 lg:pl-4">
             <Map
               buildings={currentBuildings}
               selectedBuilding={null}
