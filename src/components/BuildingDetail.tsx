@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { X, Heart, MapPin, Calendar, Camera, Video, ExternalLink, Globe, Play } from 'lucide-react';
+import { X, Heart, MapPin, Calendar, Camera, Video, ExternalLink, Globe, Play, ArrowLeft } from 'lucide-react';
 import { Building } from '../types';
 import { formatDistance } from '../utils/distance';
 import { DetailMap } from './DetailMap';
+import { Button } from './ui/button';
 import { t } from '../utils/translations';
 
 interface BuildingDetailProps {
