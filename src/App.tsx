@@ -453,76 +453,76 @@ function HomePage() {
               </div>
             ) : (
               <>
-            <div className="flex items-center justify-between w-full">
-              <h2 className="text-2xl font-bold text-foreground flex-shrink-0" style={{ fontSize: '1.5rem' }}>
-                {language === 'ja' ? '建築物一覧' : 'Buildings'} ({filteredBuildings.length}{language === 'ja' ? '件' : ' items'})
-              </h2>
-              {filteredBuildings.length >= 10 && totalPages > 1 && (
-                <span className="text-sm text-muted-foreground">
-                  {language === 'ja' ? `${currentPage}/${totalPages}ページ` : `Page ${currentPage}/${totalPages}`}
-                </span>
-              )}
-            </div>
-
-            {currentBuildings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  {language === 'ja' ? '検索条件に合う建築物が見つかりませんでした' : 'No buildings found matching your criteria'}
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  {currentBuildings.map((building, index) => (
-                    <BuildingCard
-                      key={building.id}
-                      building={building}
-                      onSelect={handleBuildingSelect}
-                      onLike={handleLike}
-                      onPhotoLike={handlePhotoLike}
-                      isSelected={false}
-                      index={startIndex + index}
-                      language={language}
-                    />
-                  ))}
+                <div className="flex items-center justify-between w-full">
+                  <h2 className="text-2xl font-bold text-foreground flex-shrink-0" style={{ fontSize: '1.5rem' }}>
+                    {language === 'ja' ? '建築物一覧' : 'Buildings'} ({filteredBuildings.length}{language === 'ja' ? '件' : ' items'})
+                  </h2>
+                  {filteredBuildings.length >= 10 && totalPages > 1 && (
+                    <span className="text-sm text-muted-foreground">
+                      {language === 'ja' ? `${currentPage}/${totalPages}ページ` : `Page ${currentPage}/${totalPages}`}
+                    </span>
+                  )}
                 </div>
 
-                {/* Pagination */}
-                {filteredBuildings.length >= 10 && totalPages > 1 && (
-                  <div className="flex justify-center items-center space-x-2 mt-8 w-full">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                    >
-                      {language === 'ja' ? '前へ' : 'Previous'}
-                    </button>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium ${
-                          currentPage === page
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                    >
-                      {language === 'ja' ? '次へ' : 'Next'}
-                    </button>
+                {currentBuildings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground text-lg">
+                      {language === 'ja' ? '検索条件に合う建築物が見つかりませんでした' : 'No buildings found matching your criteria'}
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {currentBuildings.map((building, index) => (
+                        <BuildingCard
+                          key={building.id}
+                          building={building}
+                          onSelect={handleBuildingSelect}
+                          onLike={handleLike}
+                          onPhotoLike={handlePhotoLike}
+                          isSelected={false}
+                          index={startIndex + index}
+                          language={language}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {filteredBuildings.length >= 10 && totalPages > 1 && (
+                      <div className="flex justify-center items-center space-x-2 mt-8 w-full">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        >
+                          {language === 'ja' ? '前へ' : 'Previous'}
+                        </button>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-2 rounded-md text-sm font-medium ${
+                              currentPage === page
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="px-4 py-2 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        >
+                          {language === 'ja' ? '次へ' : 'Next'}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-              )}
             </>
             )}
           </div>

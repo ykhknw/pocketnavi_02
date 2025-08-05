@@ -34,16 +34,18 @@ export function BuildingDetail({
 
   // ESCキーでモーダルを閉じる
   useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClose();
-      }
-    };
+    if (!isInline) {
+      const handleEscKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          handleClose();
+        }
+      };
 
-    document.addEventListener('keydown', handleEscKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
+      document.addEventListener('keydown', handleEscKey);
+      return () => {
+        document.removeEventListener('keydown', handleEscKey);
+      };
+    }
   }, []);
 
   const handleExternalImageSearch = (query: string, engine: 'google' | 'bing' = 'google') => {
@@ -111,13 +113,13 @@ export function BuildingDetail({
             </button>
             <button
               onClick={handleClose}
-              className={`p-3 rounded-full transition-colors ${
+              className={`p-4 rounded-full transition-colors ${
                 isRealBuilding 
                   ? 'hover:bg-amber-100 text-amber-700' 
                   : 'hover:bg-gray-100'
               }`}
             >
-              <X className="h-6 w-6" />
+              <X className="h-8 w-8" />
             </button>
           </div>
         </div>
@@ -300,14 +302,14 @@ export function BuildingDetail({
             </button>
             <button
               onClick={handleClose}
-              className={`p-3 rounded-full transition-colors ${
+              className={`p-4 rounded-full transition-colors ${
                 isRealBuilding 
                   ? 'hover:bg-amber-100 text-amber-700' 
                   : 'hover:bg-gray-100'
               }`}
               style={{ zIndex: 10000 }}
             >
-              <X className="h-6 w-6" />
+              <X className="h-8 w-8" />
             </button>
           </div>
         </div>
