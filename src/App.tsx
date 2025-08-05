@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from './components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { Building, SearchFilters, User, LikedBuilding, SearchHistory } from './types';
 import { searchBuildings } from './utils/search';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -195,8 +194,8 @@ function HomePage() {
   }, [useApi, buildings, filters, searchHistory]);
 
   const handleBuildingSelect = (building: Building) => {
-    setSelectedBuilding(building);
-    setShowDetail(false); // モーダル表示を無効化
+    const slug = generateSlug(building);
+    navigate(`/building/${slug}`);
   };
 
   const handleLike = (buildingId: number) => {
@@ -414,7 +413,6 @@ function HomePage() {
           language={language}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {buildingsLoading && (
@@ -524,6 +522,7 @@ function HomePage() {
                 )}
               </>
               )}
+            </>
             )}
           </div>
 
